@@ -5,6 +5,7 @@ class DeleteEvent {
     const group = await this.loadGroupRepository.load({ eventId: id })
     if (group === undefined) throw new Error()
     if (group.users.find(user => user.id === userId) === undefined) throw new Error()
+    if (group.users.find(user => user.id === userId)?.permission === 'user') throw new Error()
   }
 }
 
@@ -78,6 +79,17 @@ describe('Delete Event', () => {
     }
 
     const promise = sut.perform({ id, userId: 'invalid_id' })
+
+    await expect(promise).rejects.toThrowError()
+  })
+
+  it('should throw if permission is user', async () => {
+    const { sut, loadGroupRepository } = makeSut()
+    loadGroupRepository.output = {
+      users: [{ id: 'any_user_id', permission: 'user' }]
+    }
+
+    const promise = sut.perform({ id, userId })
 
     await expect(promise).rejects.toThrowError()
   })
